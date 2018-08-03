@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto"
+
+package syringepump;
+
+
+//Interface exported by each Syringe Pump server
+service SyringePump {
+    // Sends syringe pump instructions and receives current status back
+    rpc SendInstruction(Instruction) returns (Status) {}
+    
+    // Receive current syringe pump status
+    // Empty argument indicates that no arguments are passed
+    rpc GetStatus(google.protobuf.Empty) returns (Status) {}
+
+    // Stream status from a syringe pump
+    // Empty argument indicates that no arguments are passed
+    rpc GetStatusStreamed(google.protobuf.Empty) returns (stream Status) {}
+}
+
+
+//Instruction to send to a syringe pump
+message Instruction {
+    oneof direction {
+        bool infuse = 1;
+        bool withdraw = 2;
+    }
+    string rate = 3; 
+    string volume = 4;
+    string time = 5; 
+    bool stop = 6; // Set true to stop the syringe pump
+}
+
+//Status message to be returned by Syringe Pump server
+//All values are optional, though as many should be returned as possible
+message Status {
+    oneof direction {
+        bool infuse = 1;
+        bool withdraw = 2;
+    }
+    //rate as a string representing a tuple, such as (100.0, (('milliliters / min', 1.0),))
+    string rate = 3;  
+
+    //volume as a string representing a tuple, such as (100.0, (('milliliters', 1.0),))
+    string volume = 4;
+
+    //time as a string representing a tuple, such as (100.0, (('seconds', 1.0),))
+    string time_remaining = 5;
+
+    // True if pump is stopped
+    bool stopped = 7;
+
+    Make make = 6;
+
+    // Make and model of the syringe pump
+    message Make {
+        string model = 1;
+        string brand = 2;
+    }
+
+    oneof error {
+        bool stalled = 8; // Error for pump stalling
+        bool no_comm = 9; // Error for failing commmunication with pump
+        string err_msg = 10; //Statement for message not stated above (non-standard errors)
+    }
+
+} 
